@@ -18,11 +18,13 @@ if __name__ == '__main__':
 
     rdd_a = ss.read.csv('data/a.csv', header=True).rdd
     rdd_b = ss.read.csv('data/b.csv', header=True).rdd
+    rdd_a = rdd_a.map(lambda x: (int(x[0]), float(x[1])))
+    rdd_b = rdd_b.map(lambda x: (int(x[0]), float(x[1])))
     # union
     # print(ms.union(rdd_a, rdd_b).take(20))
 
     # intersection
-    # print(ms.intersect(rdd_a, rdd_b).take(20))
+    print(ms.intersect(rdd_a, rdd_b).take(20))
 
     # difference
     # print(ms.difference(rdd_a, rdd_b).take(20))
@@ -30,8 +32,20 @@ if __name__ == '__main__':
     # join
     # print(ms.join(rdd_a, rdd_b).take(20))
 
-    # aggregate
-    rdd = ss.read.csv('data/foo.csv', header=True).rdd
-    print(ms.aggregate(rdd, sum).take(20))
+    # # aggregation
+    # rdd = ss.read.csv('data/foo.csv', header=True).rdd
+    # print(ms.aggregate(rdd, lambda x, y: x + y).take(20))
+
+    # # projection
+    # rdd = ss.read.csv('data/foo.csv', header=True).rdd
+    # print(ms.projection(rdd, [2, 3]).take(20))
+
+    # # matmul
+    # rdd_a = ss.read.csv('data/matrix.csv', header=True).rdd
+    # rdd_b = ss.read.csv('data/matrix.csv', header=True).rdd
+    # print(ms.matmul(rdd_a, rdd_b))
+
+
+
 
 

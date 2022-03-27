@@ -28,7 +28,6 @@ def mv_mul(matrix_path, vector_path, session=None):
     if session is None:
         session = init()
 
-
     matrix_rdd = session.read.csv(matrix_path, header=True).rdd
     vector_rdd = session.read.csv(vector_path, header=True).rdd
 
@@ -58,6 +57,11 @@ def selection(path, condition, session=None):
     return result
 
 
+def projection(rdd, ix: list):
+    rdd = rdd.map(lambda x: (tuple([x[i] for i in ix]), tuple([x[i] for i in ix])))
+    return rdd.reduceByKey(lambda x, y: x)
+
+
 def union(rdd_a: pyspark.rdd.RDD, rdd_b: pyspark.rdd.RDD):
     r = rdd_a + rdd_b
     r = r.map(lambda x: (x[1], x[1]))
@@ -66,9 +70,11 @@ def union(rdd_a: pyspark.rdd.RDD, rdd_b: pyspark.rdd.RDD):
 
 
 def intersect(rdd_a, rdd_b):
-    r = rdd_a + rdd_b
-    r = r.map(lambda x: (x[1], x[1]))
-    result = r.groupByKey().flatMap(lambda x: [tuple(x[1])] if len(x[1]) > 1 else [])
+    rdd_a = rdd_a.map(lambda x: (x[1], "A"))
+    rdd_b = rdd_b.map(lambda x: (x[1], 'B'))
+    r = (rdd_a + rdd_b)
+    result = r.groupByKey()
+    result = result.flatMap(lambda x: [set(tuple(x[1]))])
     return result
 
 
@@ -92,11 +98,18 @@ def join(rdd_a, rdd_b):
     rdd_b = rdd_b.map(lambda x: (x[1][1], (1, x[1][0])))
 
     r = rdd_a + rdd_b
-
     result = r.groupByKey().flatMap()
+    return result
 
 
 def aggregate(rdd, aggregator):
     # (key, (value1, value2))
-    r = rdd.map(lambda x: (int(x[0]), float(x[1][0])))
-    return r.reduceByKey(aggregator)
+    r = rdd.map(lambda x: (x[2], float(x[1])))
+    return r.reduceByKey(lambda x, y: aggregator(x, y))
+
+# НЕ ГОТОВО
+def matmul(rdd_a, rdd_b):
+    rdd_a = rdd_a.map(lambda x: (x[1], ('M', x[0], float(x[2]))))
+    rdd_b = rdd_b.map(lambda x: (x[0], ('N', x[1], float(x[2]))))
+    r = rdd_a + rdd_b
+    r = r.reduceByKey()
