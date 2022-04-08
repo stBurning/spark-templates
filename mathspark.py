@@ -82,9 +82,9 @@ def join(rdd_a, rdd_b):
         b = []
         for item in l:
             if item[0] == 0:
-                a += [item]
+                a += [item[1]]
             else:
-                b += [item]
+                b += [item[1]]
         return list(itertools.product(a, b))
 
     rdd_a = rdd_a.map(lambda x: (x[1][1], (0, x[1][0])))
