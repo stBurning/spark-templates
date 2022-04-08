@@ -1,38 +1,22 @@
-import findspark
+import itertools
+
 import pyspark.rdd
-from pyspark.sql import SparkSession
+import util
 
 
-def init():
-    findspark.init()
-    session = SparkSession \
-        .builder \
-        .appName("test") \
-        .master("local") \
-        .getOrCreate()
-    return session
-
-
-def mv_mul(matrix_path, vector_path, session=None):
+def mv_mul(matrix_rdd, vector_rdd):
     """
-    Calculates y = Ax
 
-    Parameters
-    ----------
-    matrix_path : str
-        Path to matrix A
-    vector_path : str
-        Path to vector x
-    session : SparkSession, optional
+    :param matrix_rdd:
+    :param vector_rdd:
+    :return:
     """
-    if session is None:
-        session = init()
 
-    matrix_rdd = session.read.csv(matrix_path, header=True).rdd
-    vector_rdd = session.read.csv(vector_path, header=True).rdd
-
-    rb = vector_rdd.flatMap(lambda x: [((j, int(x[0])), (float(x[1]))) for j in range(100)])
-    ra = matrix_rdd.map(lambda x: ((int(x[0]), int(x[1])), (float(x[2]))))
+    rb = vector_rdd.flatMap(lambda x: [((j, int(x[0])), (float(x[1])))
+                                       for j in range(matrix_rdd.keys()
+                                                      .distinct()
+                                                      .count())])
+    ra = matrix_rdd.map(lambda x: ((x[0], int(x[1][0])), (float(x[1][0]))))
 
     r = ra + rb
     r = r.reduceByKey(lambda x, y: x * y) \
@@ -49,7 +33,7 @@ def selection(path, condition, session=None):
     :return:
     """
     if session is None:
-        session = init()
+        session = util.init()
     rdd = session.read.csv(path, header=True).rdd
     rdd = rdd.map(lambda x: (int(x[0]), x[1]))
     rdd = rdd.flatMap(lambda x: [(x[1], x[1])] if condition(x[1]) else [])
@@ -57,7 +41,7 @@ def selection(path, condition, session=None):
     return result
 
 
-def projection(rdd, ix: list):
+def projection(rdd: pyspark.rdd.RDD, ix: list):
     rdd = rdd.map(lambda x: (tuple([x[i] for i in ix]), tuple([x[i] for i in ix])))
     return rdd.reduceByKey(lambda x, y: x)
 
@@ -73,8 +57,8 @@ def intersect(rdd_a, rdd_b):
     rdd_a = rdd_a.map(lambda x: (x[1], "A"))
     rdd_b = rdd_b.map(lambda x: (x[1], 'B'))
     r = (rdd_a + rdd_b)
-    result = r.groupByKey()
-    result = result.flatMap(lambda x: [set(tuple(x[1]))])
+    result = r.groupByKey().flatMap(lambda x: [(x[0], set(tuple(x[1])))])
+    result = result.flatMap(lambda x: [x[0]] if len(x[1]) > 1 else [])
     return result
 
 
@@ -93,12 +77,21 @@ def join(rdd_a, rdd_b):
     :return: естественное соединение (a, c) для пар (a, b) и (b, c)
 
     """
+    def combine(l: list):
+        a = []
+        b = []
+        for item in l:
+            if item[0] == 0:
+                a += [item]
+            else:
+                b += [item]
+        return list(itertools.product(a, b))
 
     rdd_a = rdd_a.map(lambda x: (x[1][1], (0, x[1][0])))
-    rdd_b = rdd_b.map(lambda x: (x[1][1], (1, x[1][0])))
+    rdd_b = rdd_b.map(lambda x: (x[1][0], (1, x[1][1])))
 
     r = rdd_a + rdd_b
-    result = r.groupByKey().flatMap()
+    result = r.groupByKey().flatMap(lambda x: [(x[0], item) for item in combine(list(x[1]))])
     return result
 
 
@@ -107,9 +100,9 @@ def aggregate(rdd, aggregator):
     r = rdd.map(lambda x: (x[2], float(x[1])))
     return r.reduceByKey(lambda x, y: aggregator(x, y))
 
-# НЕ ГОТОВО
-def matmul(rdd_a, rdd_b):
-    rdd_a = rdd_a.map(lambda x: (x[1], ('M', x[0], float(x[2]))))
-    rdd_b = rdd_b.map(lambda x: (x[0], ('N', x[1], float(x[2]))))
-    r = rdd_a + rdd_b
-    r = r.reduceByKey()
+# # НЕ ГОТОВО
+# def matmul(rdd_a, rdd_b):
+#     rdd_a = rdd_a.map(lambda x: (x[1], ('M', x[0], float(x[2]))))
+#     rdd_b = rdd_b.map(lambda x: (x[0], ('N', x[1], float(x[2]))))
+#     r = rdd_a + rdd_b
+#     r = r.reduceByKey()
