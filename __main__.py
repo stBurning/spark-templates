@@ -5,42 +5,54 @@ import mathspark as ms
 if __name__ == '__main__':
     findspark.init()
 
-    ss = SparkSession \
+    session = SparkSession \
         .builder \
         .appName("test") \
         .master("local") \
         .getOrCreate()
-    ss.sparkContext.setLogLevel('ERROR')
+    session.sparkContext.setLogLevel('ERROR')
 
     # vector_rdd = ss.read.csv('data/vector.csv', header=True).rdd
+    # vector_rdd = vector_rdd.map(lambda x: (int(x[0]), float(x[1])))
     # matrix_rdd = ss.read.csv('data/matrix.csv', header=True).rdd
+    # matrix_rdd = matrix_rdd.map(lambda x: ((int(x[0]), int(x[1])), float(x[2])))
     # result = ms.mv_mul(matrix_rdd, vector_rdd)
+    # print(result.take(10))
+
+    # rdd = ss.read.csv('data/selection.csv', header=True).rdd
+    # result = ms.selection(rdd, condition=lambda x: x == 'A' or x == 'B')
     # print(result.collect())
 
-    # result = ms.selection('data/foo.csv', condition=lambda x: x == 'A' or x == 'B', session=ss)
-
-    rdd_a = ss.read.csv('data/А.csv', header=True).rdd
-    rdd_b = ss.read.csv('data/Б.csv', header=True).rdd
-    rdd_a = rdd_a.map(lambda x: (int(x[0]), (x[1], x[2])))
-    rdd_b = rdd_b.map(lambda x: (int(x[0]), (x[1], x[2])))
-    # union
+    # # union
+    # rdd_a = session.read.csv('data/a.csv', header=True).rdd
+    # rdd_b = session.read.csv('data/b.csv', header=True).rdd
+    # rdd_a = rdd_a.map(lambda x: (int(x[0]), x[1]))
+    # rdd_b = rdd_b.map(lambda x: (int(x[0]), x[1]))
     # print(ms.union(rdd_a, rdd_b).take(20))
 
-    # intersection
+    # #intersection
+    # rdd_a = session.read.csv('data/a.csv', header=True).rdd
+    # rdd_b = session.read.csv('data/b.csv', header=True).rdd
     # print(ms.intersect(rdd_a, rdd_b).take(20))
 
-    # difference
+    # # difference
+    # rdd_a = session.read.csv('data/a.csv', header=True).rdd
+    # rdd_b = session.read.csv('data/b.csv', header=True).rdd
     # print(ms.difference(rdd_a, rdd_b).take(20))
 
-    #join
+    # join
+    rdd_a = session.read.csv('data/А.csv', header=True).rdd
+    rdd_b = session.read.csv('data/Б.csv', header=True).rdd
+    rdd_a = rdd_a.map(lambda x: (int(x[0]), (x[1], x[2])))
+    rdd_b = rdd_b.map(lambda x: (int(x[0]), (x[1], x[2])))
     print(ms.join(rdd_a, rdd_b).take(20))
 
     # # aggregation
-    # rdd = ss.read.csv('data/foo.csv', header=True).rdd
+    # rdd = session.read.csv('data/aggr.csv', header=True).rdd
     # print(ms.aggregate(rdd, lambda x, y: x + y).take(20))
 
     # # projection
-    # rdd = ss.read.csv('data/foo.csv', header=True).rdd
+    # rdd = session.read.csv('data/foo.csv', header=True).rdd
     # print(ms.projection(rdd, [2, 3]).take(20))
 
     # # matmul
