@@ -12,14 +12,14 @@ if __name__ == '__main__':
         .getOrCreate()
     session.sparkContext.setLogLevel('ERROR')
 
-    # vector_rdd = ss.read.csv('data/vector.csv', header=True).rdd
+    # vector_rdd = session.read.csv('data/vector.csv', header=True).rdd
     # vector_rdd = vector_rdd.map(lambda x: (int(x[0]), float(x[1])))
-    # matrix_rdd = ss.read.csv('data/matrix.csv', header=True).rdd
+    # matrix_rdd = session.read.csv('data/matrix.csv', header=True).rdd
     # matrix_rdd = matrix_rdd.map(lambda x: ((int(x[0]), int(x[1])), float(x[2])))
     # result = ms.mv_mul(matrix_rdd, vector_rdd)
-    # print(result.take(10))
+    # print(result.collect())
 
-    # rdd = ss.read.csv('data/selection.csv', header=True).rdd
+    # rdd = session.read.csv('data/selection.csv', header=True).rdd
     # result = ms.selection(rdd, condition=lambda x: x == 'A' or x == 'B')
     # print(result.collect())
 
@@ -41,11 +41,11 @@ if __name__ == '__main__':
     # print(ms.difference(rdd_a, rdd_b).take(20))
 
     # join
-    rdd_a = session.read.csv('data/А.csv', header=True).rdd
-    rdd_b = session.read.csv('data/Б.csv', header=True).rdd
-    rdd_a = rdd_a.map(lambda x: (int(x[0]), (x[1], x[2])))
-    rdd_b = rdd_b.map(lambda x: (int(x[0]), (x[1], x[2])))
-    print(ms.join(rdd_a, rdd_b).take(20))
+    # rdd_a = session.read.csv('data/А.csv', header=True).rdd
+    # rdd_b = session.read.csv('data/Б.csv', header=True).rdd
+    # rdd_a = rdd_a.map(lambda x: (int(x[0]), (x[1], x[2])))
+    # rdd_b = rdd_b.map(lambda x: (int(x[0]), (x[1], x[2])))
+    # print(ms.join(rdd_a, rdd_b).take(20))
 
     # # aggregation
     # rdd = session.read.csv('data/aggr.csv', header=True).rdd
@@ -55,10 +55,20 @@ if __name__ == '__main__':
     # rdd = session.read.csv('data/foo.csv', header=True).rdd
     # print(ms.projection(rdd, [2, 3]).take(20))
 
-    # # matmul
-    # rdd_a = ss.read.csv('data/matrix.csv', header=True).rdd
-    # rdd_b = ss.read.csv('data/matrix.csv', header=True).rdd
-    # print(ms.matmul(rdd_a, rdd_b))
+    # matmul
+    rdd_a = session.read.csv('data/matrix_a.csv', header=True).rdd
+    rdd_b = session.read.csv('data/matrix_b.csv', header=True).rdd
+    # rdd_a = rdd_a.map(lambda x: ((int(x[0]), int(x[1])), float(x[2])))
+    # rdd_b = rdd_b.map(lambda x: ((int(x[0]), int(x[1])), float(x[2])))
+    matrix = ms.matmul(rdd_a, rdd_b).collect()
+
+    import numpy as np
+    result = np.zeros((4, 4))
+    for item in matrix:
+        result[item[0][0], item[0][1]] = item[1]
+    print(result)
+
+
 
 
 

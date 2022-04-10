@@ -118,9 +118,36 @@ def aggregate(rdd, aggregator):
     r = rdd.map(lambda x: (x[1], float(x[2])))
     return r.reduceByKey(lambda x, y: aggregator(x, y))
 
+
 # НЕ ГОТОВО
+"""
+M(I, J, V) и N(J, K, W)
+Функция Map. Для каждого элемента матрицы mij породить пару
+(j, (M, i, mij)). Аналогично для каждого элемента матрицы njk породить пару
+(j, (N, k, njk)). Отметим, что M и N в значениях – не сами матрицы, а имена
+матриц (как мы уже отмечали, говоря об аналогичной функции Map для
+естественного соединения),
+
+Функция Reduce. Для каждого ключа j проанализировать список ассоциированных с ним значений. Для каждого значения, поступившего из
+M, например (M, i, mij), и каждого значения, поступившего из N, например
+(N, k, njk), породить пару с ключом (i, k) и значением, равным произведению
+этих элементов mij njk.
+"""
+
+
 def matmul(rdd_a, rdd_b):
-    rdd_a = rdd_a.map(lambda x: (x[1], ('M', x[0], float(x[2]))))
-    rdd_b = rdd_b.map(lambda x: (x[0], ('N', x[1], float(x[2]))))
+    rdd_a = rdd_a.map(lambda x: (int(x[1]), ('M', int(x[0]), float(x[2]))))
+    rdd_b = rdd_b.map(lambda x: (int(x[0]), ('N', int(x[1]), float(x[2]))))
+
+    def combine(items):
+        result = []
+        M = [item for item in items if item[0] == 'M']
+        N = [item for item in items if item[0] == 'N']
+        for m in M:
+            for n in N:
+                result += [((m[1], n[1]), m[2] * n[2])]
+        return result
+
     r = rdd_a + rdd_b
-    r = r.reduceByKey()
+    r = r.groupByKey().flatMap(lambda x: combine(x[1])).reduceByKey(lambda x, y: x + y)
+    return r
